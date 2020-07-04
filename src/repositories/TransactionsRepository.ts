@@ -5,6 +5,15 @@ interface Balance {
   outcome: number;
   total: number;
 }
+enum Type {
+  INCOME = 'income',
+  OUTCOME = 'outcome',
+}
+interface CreateTransactionDTO {
+  title: string;
+  value: number;
+  type: 'income' | 'outcome';
+}
 
 class TransactionsRepository {
   private transactions: Transaction[];
@@ -14,15 +23,36 @@ class TransactionsRepository {
   }
 
   public all(): Transaction[] {
-    // TODO
+    return this.transactions;
+  }
+
+  private calculateBalance(operator: Type): number {
+    return this.transactions
+      .filter(t => t.type === operator)
+      .reduce((acc, tr) => acc + tr.value, 0);
   }
 
   public getBalance(): Balance {
-    // TODO
+    const income = this.calculateBalance(Type.INCOME);
+    const outcome = this.calculateBalance(Type.OUTCOME);
+    const total = income - outcome;
+
+    const balance: Balance = { income, outcome, total };
+
+    return balance;
   }
 
-  public create(): Transaction {
-    // TODO
+  public create({ title, value, type }: CreateTransactionDTO): Transaction {
+    const transaction = new Transaction({ title, value, type });
+
+    const { total } = this.getBalance();
+    if (type === Type.OUTCOME && total < value) {
+      throw Error('Resultado sem um saldo válido :(');
+    }
+
+    this.transactions.push(transaction);
+
+    return transaction;
   }
 }
 
